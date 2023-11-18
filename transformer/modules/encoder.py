@@ -15,7 +15,17 @@ from transformer.layers.combined.positional_encoding import PositionalEncoding
 
 class Encoder:
     def __init__(self, src_vocab_size, heads_num, layers_num, d_model, d_ff, dropout, max_length = 5000, data_type = np.float32):
+        """
 
+        :param src_vocab_size: 语料库大小
+        :param heads_num: 8头注意力
+        :param layers_num: 3层编码器
+        :param d_model: 层输出大小 256
+        :param d_ff: 全连接层大小 512
+        :param dropout: dropout比例 0.1
+        :param max_length: 句子最大长度 5000
+        :param data_type:
+        """
         self.token_embedding    = Embedding(src_vocab_size, d_model, data_type)
         self.position_embedding = PositionalEncoding(max_length, d_model, dropout, data_type)
 
@@ -27,12 +37,23 @@ class Encoder:
         self.scale = np.sqrt(d_model).astype(data_type) 
 
     def forward(self, src, src_mask, training):
-       
-        src = self.token_embedding.forward(src) * self.scale
-        src = self.position_embedding.forward(src)
-        src = self.dropout.forward(src, training)
+        """
 
+        :param src: 32 * max sequence
+        :param src_mask:
+        :param training:
+        :return:
+        """
+        # 此编码
+        # 输出 batch * segment size * 语料库 => batch * segment size * 256
+        src = self.token_embedding.forward(src) * self.scale
+        # 位置编码  batch * segment size * 256
+        src = self.position_embedding.forward(src)
+        # dropout部分特征0.1
+        src = self.dropout.forward(src, training)
+        # 三个编码器
         for layer in self.layers:
+            # 位置编码  batch * segment size * 256
             src = layer.forward(src, src_mask, training)
 
         return src

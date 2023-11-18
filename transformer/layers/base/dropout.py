@@ -34,9 +34,9 @@ class Dropout():
                         p = 1 - self.rate,
                         size = X.shape,
                     ).astype(self.data_type)
-
+        # dropout部分数据 概率为0.9取1 也就是dropout0.1的数据
         return X * self.mask
 
     def backward(self, error):
-
+        # drop位置的error也丢掉
         return error * self.mask

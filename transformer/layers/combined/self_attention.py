@@ -58,7 +58,7 @@ class MultiHeadAttention:
         #query = [batch size, query len, hid dim]
         #key = [batch size, key len, hid dim]
         #value = [batch size, value len, hid dim]
-
+        # 32 * sequence * 256 =>  32 * sequence * 512
         K = self.K_linear.forward(key)
         Q = self.Q_linear.forward(query)
         V = self.V_linear.forward(value)
@@ -79,6 +79,7 @@ class MultiHeadAttention:
             
             energy = np.where(self.mask == 0, float('-inf'), energy)#float("-1e20")
 
+       #
         attention = self.activation.forward(energy)
 
         self.dropout_attention = self.dropout.forward(attention, training)
