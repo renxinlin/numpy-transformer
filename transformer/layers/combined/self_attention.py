@@ -146,6 +146,7 @@ class MultiHeadAttention:
 
 
 
+        # Q,K,V 矩阵的w梯度更新 上面为attention的函数求导
 
         V_error = self.V_linear.backward(V_error)
         Q_error = self.Q_linear.backward(Q_error)

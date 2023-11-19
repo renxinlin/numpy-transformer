@@ -21,10 +21,13 @@ class PositionwiseFeedforward():
         return X
 
     def backward(self, error):
+        # 跟新feed forward的权重梯度和传往下一层的delta
         error = self.fc_2.backward(error)
         error = self.dropout.backward(error)
+        # 更新relu函数的梯度和传往下一层的delta
         error = self.activation.backward(error)
         error = self.fc_1.backward(error)
+        # 返回链式处理后的delta
         return error
 
     def set_optimizer(self, optimizer):

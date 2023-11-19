@@ -32,16 +32,24 @@ class DecoderLayer():
         return trg, attention
 
     def backward(self, error):
+        # feed forward的norm&add 反向传播
         error = self.ff_layer_norm.backward(error)
-
+        # feed forward的反向传播
         _error = self.position_wise_feed_forward.backward(self.dropout.backward(error))
+        # Cross Attention的Norm&Add 既输出给了position_wise_feed_forward 也通过残差连接输出给了ff_layer_norm
+        # 所以这里的反向传播 error = error + _error
         error = self.enc_attn_layer_norm.backward(error + _error)
-
+        # Cross Attention的自注意力delta要分开,一部分进入encoder,一部分继续在decoder中反向传播
+        # Q K V的delta 对应_error在decoder继续传播  enc_error1, enc_error2 需要传递到编码器
         _error, enc_error1, enc_error2 = self.encoder_attention.backward(self.dropout.backward(error))
-        error = self.self_attention_norm.backward(error + _error)
 
+        # masked 注意力的norm&Add层 取的是enc_attn_layer_norm的delta 和 Q矩阵的delta
+        error = self.self_attention_norm.backward(error + _error)
+        # masked attention 的 q k v 误差,需要全部反向传播给下一个的decoder_layer
         _error, _error2, _error3 = self.self_attention.backward(self.dropout.backward(error))
-        
+        """
+        结合架构图,我们给出结论,在transformer中的反向传播,所有forward多箭头的特征传递,反向传播均需加和计算
+        """
         return _error +_error2 + _error3 + error, enc_error1 + enc_error2
 
     def set_optimizer(self, optimizer):

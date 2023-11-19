@@ -75,11 +75,11 @@ class Dense():
         return self.output_data
 
     def backward(self, error):
+        # （wx+b） => 梯度 = X转置* delta
         self.grad_w = np.sum(np.matmul(self.input_data.transpose(0, 2, 1), error), axis = 0)
         self.grad_b = np.sum(error, axis = (0, 1))
-
+        # 算出下一层所需的delta
         output_error = np.dot(error, self.w.T)
-
         return output_error
 
     def update_weights(self, layer_num):

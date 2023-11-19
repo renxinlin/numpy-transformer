@@ -38,13 +38,15 @@ class EncoderLayer:
         return src
 
     def backward(self, error):
+        # feed forward的norm&add的反向传播梯度
         error = self.ff_layer_norm.backward(error)
-
+        # feed_forward 多个线性函数和relu非线性激活的backward
         _error = self.position_wise_feed_forward.backward(self.dropout.backward(error))
+        # self_attention的Norm&Add 前向传播给position_wise_feed_forward + ff_layer_norm ,所以这里误差累加
         error = self.self_attention_norm.backward(error + _error)
-        
+        # 算出q,k,v矩阵的delta
         _error, _error2, _error3 = self.self_attention.backward(self.dropout.backward(error))
-
+        # 将self_attention的Norm&Add和q,k,v矩阵的delta累加,作为反向传播下一层的delta
         return _error +_error2 +_error3 + error
 
     def set_optimizer(self, optimizer):

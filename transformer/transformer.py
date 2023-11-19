@@ -191,6 +191,7 @@ class Seq2Seq():
         :return:
         """
         error = self.decoder.backward(error)
+        # 所有的decoder的 Cross Attention的K,V矩阵的delta作为encoder的起始delta进行反向传播
         error = self.encoder.backward(self.decoder.encoder_error)
 
     def update_weights(self):
@@ -217,7 +218,7 @@ class Seq2Seq():
 
             # 反向计算梯队与反向传播
             self.backward(error.reshape(output.shape))
-            # 更新权重
+            # 更新权重 [backward 每个class都有,update时针对有W和B的class进行update]
             self.update_weights()
             #
             tqdm_range.set_description(

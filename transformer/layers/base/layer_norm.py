@@ -89,6 +89,7 @@ class LayerNormalization():
         error_T = error.T
 
         #first variant
+        # 计算反向传播的梯度
         output_error = (1 / self.feature_size) * np.expand_dims(self.gamma, axis = self.normalized_axis).T * self.stddev_inv * (#self.gamma[np.newaxis, :].T
             self.feature_size * error_T
             - np.sum(error_T, axis = 0)

@@ -61,10 +61,13 @@ class Encoder:
     def backward(self, error):
         
         for layer in reversed(self.layers):
+            # 编码层反向传播
             error = layer.backward(error)
-        
+        # dropout 反向传播,按照forward进行指定位置的dropout梯度
         error = self.dropout.backward(error)
+        # f(x) = x + C; dalta为error * 1
         error = self.position_embedding.backward(error) * self.scale
+        # 最后一层,只求梯度，不再求error（delta）
         error = self.token_embedding.backward(error)
 
 

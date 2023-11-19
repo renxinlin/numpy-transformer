@@ -51,19 +51,30 @@ class Decoder:
         return activated_output, attention
 
     def backward(self, error):
+        # f(x) = x 激活层导数 = error * 1
         error = self.activation.backward(error)
-        
+        # 对应decoder linear全连接层的delta
         error = self.fc_out.backward(error)
+        """
+         wx+b    wx+b
+         wx+b    wx+b
+         wx+b    wx+b
+         wx+b    wx+b
         
+        
+        """
         self.encoder_error = 0
         for layer in reversed(self.layers):
+            # 每一层的decoder error 作为下一层的 delta
             error, ecn_error = layer.backward(error)
+            # 每一层的encoder_error需要累加,用于encoder的反向传播
             self.encoder_error += ecn_error
 
-
+        # dropout一部分delta
         error = self.dropout.backward(error)
-
+        # f(x) = x + C; dalta为error * 1
         error = self.position_embedding.backward(error) * self.scale
+        # 最后一层,只求梯度，不再求error（delta）
         error = self.token_embedding.backward(error)
 
     def set_optimizer(self, optimizer):
