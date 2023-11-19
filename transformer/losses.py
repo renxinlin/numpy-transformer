@@ -55,6 +55,12 @@ class CrossEntropy():
         self.log_softmax = LogSoftmax()
 
     def loss(self, y, t):
+        """
+        由于 decoder在输出时没有使用softmax，所以这里使用softmax激活wx+b后计算损失
+        :param y: 预测值
+        :param t: 目标值
+        :return:
+        """
         y = np.asarray(y)
         t = np.asarray(t)
         log_softmax = self.log_softmax.forward(y)

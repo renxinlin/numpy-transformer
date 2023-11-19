@@ -12,7 +12,7 @@ class PositionwiseFeedforward():
         self.dropout = Dropout(dropout)
 
     def forward(self, X, training = True):
-        
+        # feed forward 实现
         X = self.fc_1.forward(X)
         X = self.activation.forward(X)
         X = self.dropout.forward(X, training)

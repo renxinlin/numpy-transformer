@@ -13,12 +13,12 @@ from transformer.activations import Sigmoid, Softmax
 class MultiHeadAttention:
     """Multi-HeadAttention"""
     def __init__(self, d_model = 512, heads_num = 8, dropout = 0.1, data_type = None):
-        self.d_model = d_model
+        self.d_model = d_model # 模型的维度为256 也就是单个自注意力的数据维度为256/8 =32
         self.heads_num = heads_num
 
         self.data_type = data_type
 
-        self.d_k, self.d_q, self.d_v = self.d_model // heads_num, self.d_model // heads_num, self.d_model // heads_num #512 / 8 = 64
+        self.d_k, self.d_q, self.d_v = self.d_model // heads_num, self.d_model // heads_num, self.d_model // heads_num # 256 / 8 = 32
         self.scale = np.sqrt(self.d_k).astype(self.data_type)
         
         self.K_linear = Dense(inputs_num = self.d_model, units_num = self.d_k * heads_num, use_bias = False, data_type = self.data_type) # self.W_K = np.random.randn(self.d_model, self.d_k)
@@ -52,13 +52,34 @@ class MultiHeadAttention:
         
 
     def forward(self, query, key, value, mask, training = True):
-        
+        """
+        多头注意力的计算架构
+
+
+        X                 X                  X
+        |                 |                  |
+        Qlinear[1~8]      Klinear[1~8]       Vlinear[1~8]
+
+                          |
+                scaled dot-product attention K*V/scale
+                缩放的点乘注意力
+                          |
+                        softmax
+                          |
+                        softmax(result)*V
+                          |
+                        concat
+                          |
+                        linear
+
+
+        """
         self.key_len, self.query_len, self.value_len = key.shape[1], query.shape[1], value.shape[1]
 
         #query = [batch size, query len, hid dim]
         #key = [batch size, key len, hid dim]
         #value = [batch size, value len, hid dim]
-        # 32 * sequence * 256 =>  32 * sequence * 512
+        # 32 * sequence * 256 =>  32 * sequence * 256
         K = self.K_linear.forward(key)
         Q = self.Q_linear.forward(query)
         V = self.V_linear.forward(value)
@@ -66,30 +87,32 @@ class MultiHeadAttention:
         # self.K = K.reshape(batch_size, self.heads_num, self.key_len, self.d_k)
         # self.Q = Q.reshape(batch_size, self.heads_num, self.query_len, self.d_q)
         # self.V = V.reshape(batch_size, self.heads_num, self.value_len, self.d_v)
+        # batch_size * head_nums * sequence size * 词向量特征维度
         self.K = self.split_heads_forward(K)
         self.Q = self.split_heads_forward(Q)
         self.V = self.split_heads_forward(V)
 
-
+        # batch_size * head_num * 自注意力权重
         energy = np.matmul(self.Q, self.K.transpose(0, 1, 3, 2)) / self.scale
-
+        # decoder还需要masked ,encoder没有masked
         self.mask = np.asarray(mask)
         if self.mask is not None:
             self.mask = self.mask[:, np.newaxis, ...]
             
             energy = np.where(self.mask == 0, float('-inf'), energy)#float("-1e20")
 
-       #
+       # softmax激活函数 归一化自注意力权重
         attention = self.activation.forward(energy)
 
         self.dropout_attention = self.dropout.forward(attention, training)
+        # 自注意力特征向量 softmax结果*V张量
         output = np.matmul(self.dropout_attention, self.V)
 
         # concat_output = output.reshape(batch_size, self.query_len, self.heads_num * self.d_v) #self.d_model
         concat_output = self.group_heads_forward(output)
 
         O = self.O_linear.forward(concat_output)
-
+        # 返回自注意力联合结果 和 8个头的注意力权重
         return O, attention
 
     def backward(self, error):

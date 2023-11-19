@@ -68,7 +68,7 @@ class Dense():
        
         self.batch_size = len(self.input_data)
         # 32 * sequence * 256
-        # 256 * 512
+        # 256 * 输出层大小
 
         self.output_data = np.dot(self.input_data, self.w) + self.b
         

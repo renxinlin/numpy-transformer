@@ -20,7 +20,7 @@ class Encoder:
         :param src_vocab_size: 语料库大小
         :param heads_num: 8头注意力
         :param layers_num: 3层编码器
-        :param d_model: 层输出大小 256
+        :param d_model: 层输出大小 256 对于多头注意力是所有头的总大小
         :param d_ff: 全连接层大小 512
         :param dropout: dropout比例 0.1
         :param max_length: 句子最大长度 5000

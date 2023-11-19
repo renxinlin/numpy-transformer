@@ -20,8 +20,8 @@ class EncoderLayer:
         # layer2   batch * segment size * 256 （词嵌入转换得到）
         # layer3   batch * segment size * 256 （词嵌入转换得到）
         _src, _ = self.self_attention.forward(src, src, src, src_mask, training) # Self-Attention 操作
+        # 经过dropOut后的残差连接与规范化 解决梯度消失和梯度爆炸
         src = self.self_attention_norm.forward(src + self.dropout.forward(_src, training)) # Add & Norm 操作
-        # 两个线性变换和一个非线性激活函数
 
         """
         Position-wise Feed-Forward是Transformer模型中Encoder和Decoder层都会使用的一种操作。它包括两个线性变换和一个非线性激活函数，通常是ReLU。这个操作可以被描述为：
@@ -31,9 +31,10 @@ class EncoderLayer:
         这个操作的作用在于充分利用位置信息和特征之间的关系，以及提供多样化的特征表示。这有助于模型更好地理解输入序列中不同位置的信息，并提升模型的表达能力。
         总之，Position-wise Feed-Forward操作是Transformer模型中重要的组成部分，用于增强模型对序列数据的建模能力
         """
+        # 两个线性变换和一个非线性激活函数
         _src = self.position_wise_feed_forward.forward(src, training) # Position-wise Feed-Forward 操作
         src = self.ff_layer_norm.forward(src + self.dropout.forward(_src, training)) # Add & Norm 操作
-
+        # 经过8头自注意力和全连接非线性变化后的残差&规范化结果
         return src
 
     def backward(self, error):

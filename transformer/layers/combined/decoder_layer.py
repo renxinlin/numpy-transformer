@@ -17,14 +17,16 @@ class DecoderLayer():
         self.dropout = Dropout(dropout, data_type)
 
     def forward(self, trg, trg_mask, src, src_mask, training):
+        # masked self attention masked 自注意力 q k v都是预测值 还需要对预测值进行masked
         _trg, _ = self.self_attention.forward(trg, trg, trg, trg_mask, training)
         trg = self.self_attention_norm.forward(trg + self.dropout.forward(_trg, training))
-
+        # cross attention 交叉注意力 query是预测值，k,v是原目标
         _trg, attention = self.encoder_attention.forward(trg, src, src, src_mask, training)
         trg = self.enc_attn_layer_norm.forward(trg + self.dropout.forward(_trg, training))
 
-
+        # feed forward
         _trg = self.position_wise_feed_forward.forward(trg, training)
+        # add & Norm
         trg = self.ff_layer_norm.forward(trg + self.dropout.forward(_trg, training))
 
         return trg, attention

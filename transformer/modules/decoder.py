@@ -28,24 +28,26 @@ class Decoder:
         self.fc_out = Dense(inputs_num = d_model, units_num = trg_vocab_size, data_type = data_type)
         self.dropout = Dropout(dropout, data_type)
         self.scale = np.sqrt(d_model).astype(data_type)
-
         self.activation = Identity()#Activation(Identity())
 
 
     def forward(self, trg, trg_mask, src, src_mask, training):
-        
+        # 缩放的词嵌入向量
         trg = self.token_embedding.forward(trg) * self.scale
+        # 位置编码
         trg = self.position_embedding.forward(trg)
+        # dropout 0.1的比例
         trg = self.dropout.forward(trg, training)
-       
+        # 3层 decoder[8头]
         for layer in self.layers:
             trg, attention = layer.forward(trg, trg_mask, src, src_mask, training)
-        
+        # 线性输出 激活并分类 分类为语料表大小
         output = self.fc_out.forward(trg)
-        
+        # desc: 没有用softmax激活,也可以理解 直接取最大值进行分类
         activated_output = self.activation.forward(output)
-
-
+        softmax = Softmax()
+        softmax_active = softmax.forward(output)
+        # 返回预测概率，以及最后一层的多头注意力权重
         return activated_output, attention
 
     def backward(self, error):

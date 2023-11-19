@@ -43,7 +43,7 @@ indexes = (PAD_INDEX, SOS_INDEX, EOS_INDEX, UNK_INDEX)
 data_preparator = DataPreparator(tokens, indexes)
 # 根据数据集构建语料表 ，根据语料表索引构建训练集，测试集，验证集词向量
 train_data, test_data, val_data = data_preparator.prepare_data(
-    path = 'dataset/',
+    path = '../dataset/',
     batch_size = BATCH_SIZE,
     min_freq = 2)
 """"""""""""""""""""""""""""""
@@ -206,18 +206,20 @@ class Seq2Seq():
 
         tqdm_range = tqdm(enumerate(zip(source, target)), total = len(source))
         for batch_num, (source_batch, target_batch) in tqdm_range:
-
+            # outout大小为batch*sequence size * 语料表大小
             output, attention = self.forward(source_batch, target_batch[:,:-1], training = True)
 
             _output = output.reshape(output.shape[0] * output.shape[1], output.shape[2])
-
+            # 计算交叉熵损失
             loss_history.append(self.loss_function.loss(_output, target_batch[:, 1:].astype(np.int32).flatten()).mean())#[:, np.newaxis]
+            # 计算梯度
             error = self.loss_function.derivative(_output, target_batch[:, 1:].astype(np.int32).flatten())#[:, np.newaxis]
 
-
+            # 反向计算梯队与反向传播
             self.backward(error.reshape(output.shape))
+            # 更新权重
             self.update_weights()
-
+            #
             tqdm_range.set_description(
                 f"training | loss: {loss_history[-1]:.7f} | perplexity: {np.exp(loss_history[-1]):.7f} | epoch {epoch + 1}/{epochs}" #loss: {loss:.4f}
             )

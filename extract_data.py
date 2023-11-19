@@ -1,6 +1,5 @@
 import tarfile
 import requests
-from tqdm import tqdm
 
 #References: https://pytorchnlp.readthedocs.io/en/latest/_modules/torchnlp/datasets/multi30k.html
 # 替换下载url可用下载源
